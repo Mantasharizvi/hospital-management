@@ -1,6 +1,21 @@
 # MediCore HMS — Admin Panel UI
 
-Hospital Management System admin panel UI (Part 1: Project Setup & Common Components), built with React + Vite, ready for backend API integration.
+Hospital Management System admin panel UI, built with React + Vite, ready for backend API integration.
+
+## Module status
+- ✅ Part 1 — Project setup, auth, layout & common components
+- ✅ Part 2 — Dashboard module (stat cards, revenue/appointment/department charts, notifications, quick widgets, search & filter)
+- ⬜ Part 3 — OPD
+- ⬜ Part 4 — IPD
+- ⬜ Part 5 — Pharmacy
+- ⬜ Part 6 — User Management
+- ⬜ Part 7 — Reports & Analytics
+- ⬜ Part 8 — Finalization
+
+## Branching convention
+Each module is developed on its own branch off `main` (e.g. `feature/dashboard-module`,
+`feature/opd-module`) and merged in via PR once reviewed, so modules can be built,
+reviewed, and rolled back independently.
 
 ## Stack
 - React 19 + Vite
@@ -25,8 +40,11 @@ Demo login: any email + password works (mocked in `AuthContext`, ready to swap f
 src/
 ├── components/
 │   ├── common/       # Button, Input, Select, Modal, Table, Loader, Card, StatusBadge
-│   └── layout/       # Sidebar, Header, Layout, AuthLayout
+│   ├── layout/       # Sidebar, Header, Layout, AuthLayout
+│   └── dashboard/    # Module-specific: StatCard, RevenueChart, AppointmentChart,
+│                     # DepartmentLoadChart, NotificationsPanel, QuickWidgets, DashboardToolbar
 ├── context/          # AuthContext (Context API)
+├── data/             # Mock data per module (dashboardData.js, ...) — swap for API calls later
 ├── pages/
 │   ├── auth/         # Login, ForgotPassword
 │   ├── dashboard/    # Dashboard, Placeholder (for modules not yet built)
@@ -36,6 +54,10 @@ src/
 ├── hooks/            # (reserved for shared hooks)
 └── index.css         # Tailwind + design tokens
 ```
+
+Each module follows the same pattern: page component in `pages/<module>/`, module-specific
+building blocks in `components/<module>/`, and mock data in `data/<module>Data.js` — so
+swapping mock data for real endpoints later only touches one file per page.
 
 ## Design tokens
 - **Colors**: navy (sidebar/auth panel), teal (primary/brand), surface (background),

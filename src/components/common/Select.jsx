@@ -2,10 +2,12 @@ import { forwardRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 const Select = forwardRef(function Select(
-  { label, error, hint, options = [], placeholder = 'Select an option', className = '', id, ...props },
+  { label, error, hint, options = [], placeholder = 'Select an option', className = '', id, value, ...props },
   ref
 ) {
   const selectId = id || label?.toLowerCase().replace(/\s+/g, '-');
+  // Only fall back to an uncontrolled defaultValue when the caller isn't controlling this select.
+  const valueProps = value !== undefined ? { value } : { defaultValue: '' };
 
   return (
     <div className="w-full">
@@ -18,7 +20,7 @@ const Select = forwardRef(function Select(
         <select
           ref={ref}
           id={selectId}
-          defaultValue=""
+          {...valueProps}
           className={`
             w-full appearance-none rounded-lg border bg-white text-ink-900 text-sm
             px-3.5 py-2.5 pr-10

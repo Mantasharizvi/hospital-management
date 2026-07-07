@@ -1,107 +1,84 @@
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS, CategoryScale, LinearScale, PointElement,
-  LineElement, Tooltip, Filler,
-} from 'chart.js';
-import { Users, BedDouble, CalendarCheck, Receipt } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import Card from '../../components/common/Card';
-import StatusBadge from '../../components/common/StatusBadge';
-import Table from '../../components/common/Table';
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler);
-
-const stats = [
-  { label: 'Total Patients', value: '2,481', icon: Users, accent: '#0B5566' },
-  { label: 'Occupied Beds', value: '186 / 240', icon: BedDouble, accent: '#218A5D' },
-  { label: "Today's Appointments", value: '58', icon: CalendarCheck, accent: '#B87A17' },
-  { label: 'Pending Bills', value: '₹1,24,300', icon: Receipt, accent: '#C7423C' },
-];
-
-const chartData = {
-  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-  datasets: [
-    {
-      label: 'Admissions',
-      data: [12, 19, 14, 22, 18, 9, 15],
-      borderColor: '#0E6B7F',
-      backgroundColor: 'rgba(14,107,127,0.08)',
-      fill: true,
-      tension: 0.35,
-      pointRadius: 3,
-    },
-  ],
-};
-
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
-  scales: {
-    x: { grid: { display: false } },
-    y: { grid: { color: '#E4E9ED' }, beginAtZero: true },
-  },
-};
-
-const recentPatients = [
-  { id: 1, name: 'Ravi Kumar', doctor: 'Dr. Sen', ward: 'ICU - 3', status: 'success' },
-  { id: 2, name: 'Meena Shah', doctor: 'Dr. Verma', ward: 'General - 12', status: 'warning' },
-  { id: 3, name: 'Arjun Nair', doctor: 'Dr. Rao', ward: 'General - 4', status: 'success' },
-  { id: 4, name: 'Sunita Roy', doctor: 'Dr. Sen', ward: 'ICU - 1', status: 'danger' },
-];
-
-const columns = [
-  { key: 'name', header: 'Patient' },
-  { key: 'doctor', header: 'Doctor' },
-  { key: 'ward', header: 'Ward / Bed' },
-  {
-    key: 'status',
-    header: 'Condition',
-    render: (row) => (
-      <StatusBadge status={row.status}>
-        {row.status === 'success' ? 'Stable' : row.status === 'warning' ? 'Observation' : 'Critical'}
-      </StatusBadge>
-    ),
-  },
-];
+import StatCard from '../../components/dashboard/StatCard';
+import RevenueChart from '../../components/dashboard/RevenueChart';
+import AppointmentChart from '../../components/dashboard/AppointmentChart';
+import DepartmentLoadChart from '../../components/dashboard/DepartmentLoadChart';
+import NotificationsPanel from '../../components/dashboard/NotificationsPanel';
+import QuickWidgets from '../../components/dashboard/QuickWidgets';
+import DashboardToolbar from '../../components/dashboard/DashboardToolbar';
+import RecentPatientsTable from '../../components/dashboard/RecentPatientsTable';
+import { statCards, recentPatients, notifications, quickWidgets } from '../../data/dashboardData';
 
 export default function Dashboard() {
+  const [search, setSearch] = useState('');
+  const [department, setDepartment] = useState('All Departments');
+  const [range, setRange] = useState('Last 7 days');
+
+  const filteredPatients = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return recentPatients.filter((p) => {
+      const matchesSearch =
+        !term || p.name.toLowerCase().includes(term) || p.doctor.toLowerCase().includes(term);
+      const matchesDept = department === 'All Departments' || p.department === department;
+      return matchesSearch && matchesDept;
+    });
+  }, [search, department]);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-semibold text-ink-900">Dashboard</h1>
-        <p className="text-sm text-ink-600 mt-1">Overview of today's hospital activity.</p>
+      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-semibold text-ink-900">Dashboard</h1>
+          <p className="text-sm text-ink-600 mt-1">Overview of today's hospital activity.</p>
+        </div>
       </div>
 
+      {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {stats.map((s) => (
-          <Card key={s.label} accent={s.accent}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-ink-600 mb-1">{s.label}</p>
-                <p className="font-display text-xl font-semibold text-ink-900">{s.value}</p>
-              </div>
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: `${s.accent}1A`, color: s.accent }}
-              >
-                <s.icon className="w-5 h-5" />
-              </div>
-            </div>
-          </Card>
+        {statCards.map((s) => (
+          <StatCard key={s.id} {...s} />
         ))}
       </div>
 
+      {/* Revenue + Appointment status */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <Card title="Admissions this week" className="xl:col-span-2">
-          <div className="h-64">
-            <Line data={chartData} options={chartOptions} />
-          </div>
+        <Card title="Revenue Overview" className="xl:col-span-2">
+          <RevenueChart />
         </Card>
-
-        <Card title="Recently Admitted">
-          <Table columns={columns} data={recentPatients} />
+        <Card title="Appointment Status">
+          <AppointmentChart />
         </Card>
       </div>
+
+      {/* Department load + Notifications */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <Card title="Patient Load by Department" className="xl:col-span-2">
+          <DepartmentLoadChart />
+        </Card>
+        <NotificationsPanel items={notifications} />
+      </div>
+
+      {/* Quick widgets */}
+      <QuickWidgets
+        upcomingAppointments={quickWidgets.upcomingAppointments}
+        expiringMedicines={quickWidgets.expiringMedicines}
+      />
+
+      {/* Recent patients: search + filter + table */}
+      <Card title="Recently Admitted">
+        <div className="mb-4">
+          <DashboardToolbar
+            search={search}
+            onSearchChange={setSearch}
+            department={department}
+            onDepartmentChange={setDepartment}
+            range={range}
+            onRangeChange={setRange}
+          />
+        </div>
+        <RecentPatientsTable data={filteredPatients} />
+      </Card>
     </div>
   );
 }
