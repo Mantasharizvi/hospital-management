@@ -1,18 +1,16 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, CalendarDays, Stethoscope, BedDouble,
-  Receipt, Pill, FlaskConical, Settings, X, Activity,
+  LayoutDashboard, Users, ClipboardList, BedDouble,
+  Pill, Settings, X, Activity, BarChart3,
 } from 'lucide-react';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/patients', label: 'Patients', icon: Users },
-  { to: '/appointments', label: 'Appointments', icon: CalendarDays },
-  { to: '/doctors', label: 'Doctors', icon: Stethoscope },
-  { to: '/wards', label: 'Wards & Beds', icon: BedDouble },
+  { to: '/opd', label: 'OPD', icon: ClipboardList },
+  { to: '/ipd', label: 'IPD', icon: BedDouble },
   { to: '/pharmacy', label: 'Pharmacy', icon: Pill },
-  { to: '/lab', label: 'Lab Reports', icon: FlaskConical },
-  { to: '/billing', label: 'Billing', icon: Receipt },
+  { to: '/reports', label: 'Reports & Analytics', icon: BarChart3 },
+  { to: '/users', label: 'User Management', icon: Users },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 

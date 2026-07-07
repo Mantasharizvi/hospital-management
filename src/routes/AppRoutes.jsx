@@ -5,6 +5,11 @@ import Login from '../pages/auth/Login';
 import ForgotPassword from '../pages/auth/ForgotPassword';
 import Dashboard from '../pages/dashboard/Dashboard';
 import Placeholder from '../pages/dashboard/Placeholder';
+import OpdPage from '../pages/opd/OpdPage';
+import IpdPage from '../pages/ipd/IpdPage';
+import PharmacyPage from '../pages/pharmacy/PharmacyPage';
+import ReportsAnalyticsPage from '../pages/reports-analytics/ReportsAnalyticsPage';
+import UserManagementPage from '../pages/user-management/UserManagementPage';
 import NotFound from '../pages/NotFound';
 
 export default function AppRoutes() {
@@ -18,13 +23,11 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/patients" element={<Placeholder title="Patients" />} />
-          <Route path="/appointments" element={<Placeholder title="Appointments" />} />
-          <Route path="/doctors" element={<Placeholder title="Doctors" />} />
-          <Route path="/wards" element={<Placeholder title="Wards & Beds" />} />
-          <Route path="/pharmacy" element={<Placeholder title="Pharmacy" />} />
-          <Route path="/lab" element={<Placeholder title="Lab Reports" />} />
-          <Route path="/billing" element={<Placeholder title="Billing" />} />
+          <Route path="/opd" element={<OpdPage />} />
+          <Route path="/ipd" element={<IpdPage />} />
+          <Route path="/pharmacy" element={<PharmacyPage />} />
+          <Route path="/reports" element={<ReportsAnalyticsPage />} />
+          <Route path="/users" element={<UserManagementPage />} />
           <Route path="/settings" element={<Placeholder title="Settings" />} />
         </Route>
       </Route>

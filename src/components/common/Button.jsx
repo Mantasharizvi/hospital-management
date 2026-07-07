@@ -5,6 +5,7 @@ const variants = {
   secondary: 'bg-white text-ink-900 border border-line hover:bg-surface focus-visible:ring-teal-500',
   danger: 'bg-danger-600 text-white hover:opacity-90 focus-visible:ring-danger-600',
   ghost: 'bg-transparent text-teal-700 hover:bg-teal-50 focus-visible:ring-teal-500',
+  blue: 'bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500',
 };
 
 const sizes = {
