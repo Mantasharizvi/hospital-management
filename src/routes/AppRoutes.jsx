@@ -10,6 +10,7 @@ import IpdPage from '../pages/ipd/IpdPage';
 import PharmacyPage from '../pages/pharmacy/PharmacyPage';
 import ReportsAnalyticsPage from '../pages/reports-analytics/ReportsAnalyticsPage';
 import UserManagementPage from '../pages/user-management/UserManagementPage';
+import SettingsPage from '../pages/settings/SettingsPage';
 import NotFound from '../pages/NotFound';
 
 export default function AppRoutes() {
@@ -26,9 +27,9 @@ export default function AppRoutes() {
           <Route path="/opd" element={<OpdPage />} />
           <Route path="/ipd" element={<IpdPage />} />
           <Route path="/pharmacy" element={<PharmacyPage />} />
-          <Route path="/reports" element={<ReportsAnalyticsPage />} />
+            <Route path="/reports" element={<ReportsAnalyticsPage />} />
           <Route path="/users" element={<UserManagementPage />} />
-          <Route path="/settings" element={<Placeholder title="Settings" />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>
 

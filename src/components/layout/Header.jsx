@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Menu, Search, Bell, ChevronDown, LogOut, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-
+import GlobalSearch from './GlobalSearch';
 export default function Header({ onMenuClick }) {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -16,24 +16,12 @@ export default function Header({ onMenuClick }) {
         <Menu className="w-5.5 h-5.5" />
       </button>
 
-      <div className="relative hidden sm:block flex-1 max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
-        <input
-          type="text"
-          placeholder="Search patients, doctors, records…"
-          className="w-full rounded-lg border border-line bg-surface pl-9 pr-3 py-2 text-sm placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white"
-        />
-      </div>
+   <div className="relative hidden sm:block flex-1 max-w-sm">
+  <GlobalSearch onSelect={(item) => console.log('selected', item)} />
+</div>
 
       <div className="ml-auto flex items-center gap-2">
-        <button
-          className="relative p-2 rounded-lg text-ink-600 hover:bg-surface"
-          aria-label="Notifications"
-        >
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-danger-600" />
-        </button>
-
+       
         <div className="relative">
           <button
             onClick={() => setMenuOpen((o) => !o)}
