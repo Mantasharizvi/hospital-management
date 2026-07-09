@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback } from 'react';
-import api from '../services/api';
+import adminCredentials from '../data/adminCredentials.json';
 
 const AuthContext = createContext(null);
 
@@ -15,23 +15,54 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      // TODO: replace with real endpoint once backend is ready
-      // const { data } = await api.post('/auth/login', credentials);
-      await new Promise((r) => setTimeout(r, 700));
-      const mockUser = { name: 'Dr. Aisha Verma', role: 'Administrator', email: credentials.email };
+      // API-integration-ready: once a real backend exists, swap the block below for
+      // `const { data } = await api.post('/auth/login', credentials);` — the JSON-based
+      // fixed-credential check stays useful as a local/offline fallback.
+      await new Promise((r) => setTimeout(r, 600));
+
+      const matchedUser = adminCredentials.find(
+        (u) =>
+          u.email.toLowerCase() === credentials.email?.trim().toLowerCase() &&
+          u.password === credentials.password
+      );
+
+      if (!matchedUser) {
+        const message = 'Wrong ID or password. Please try again.';
+        setError(message);
+        return { success: false, message };
+      }
+
+      const authenticatedUser = {
+        name: matchedUser.name,
+        role: matchedUser.role,
+        email: matchedUser.email,
+        department: matchedUser.department,
+        phone: matchedUser.phone,
+        lastLogin: matchedUser.lastLogin,
+        memberSince: matchedUser.memberSince,
+        status: matchedUser.status,
+      };
       const mockToken = 'mock-jwt-token';
 
       localStorage.setItem('hms_token', mockToken);
-      localStorage.setItem('hms_user', JSON.stringify(mockUser));
-      setUser(mockUser);
+      localStorage.setItem('hms_user', JSON.stringify(authenticatedUser));
+      setUser(authenticatedUser);
       return { success: true };
     } catch (err) {
-      const message = err.response?.data?.message || 'Invalid email or password';
+      const message = err.response?.data?.message || 'Something went wrong. Please try again.';
       setError(message);
       return { success: false, message };
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const updateUser = useCallback((updates) => {
+    setUser((current) => {
+      const next = { ...current, ...updates };
+      localStorage.setItem('hms_user', JSON.stringify(next));
+      return next;
+    });
   }, []);
 
   const logout = useCallback(() => {
@@ -40,7 +71,7 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  const value = { user, loading, error, login, logout, isAuthenticated: !!user };
+  const value = { user, loading, error, login, logout, updateUser, isAuthenticated: !!user };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

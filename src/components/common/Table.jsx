@@ -13,7 +13,7 @@ export default function Table({
   page = 1,
   totalPages = 1,
   onPageChange,
-  headerBgClass = 'bg-surface',
+  headerBgClass = 'bg-teal-700',
 }) {
   return (
     <div className="w-full bg-white rounded-xl border border-line overflow-hidden">

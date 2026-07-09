@@ -7,6 +7,7 @@ export default function DashboardToolbar({
   search, onSearchChange,
   department, onDepartmentChange,
   range, onRangeChange,
+  onExport,
 }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -39,7 +40,7 @@ export default function DashboardToolbar({
         />
       </div>
 
-      <Button variant="secondary" icon={Download} className="sm:ml-auto shrink-0">
+      <Button variant="secondary" icon={Download} className="sm:ml-auto shrink-0" onClick={onExport}>
         Export
       </Button>
     </div>

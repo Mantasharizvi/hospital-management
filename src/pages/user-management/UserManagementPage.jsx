@@ -5,9 +5,7 @@ import {
   Shield,
   Lock,
   UserCheck,
-  Trash2,
   Edit2,
-  Settings,
   Eye,
 } from 'lucide-react';
 import Card from '../../components/common/Card';
@@ -15,6 +13,10 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Table from '../../components/common/Table';
 import Modal from '../../components/common/Modal';
+import FormModal from '../../components/common/FormModal';
+import UserProfileModal from '../../components/common/UserProfileModal';
+import { useToast } from '../../context/ToastContext';
+import { validateForm, rules, isValid } from '../../utils/validators';
 
 const statCards = [
   { label: 'Total Users', value: '42', detail: '8 active today', icon: Users },
@@ -23,7 +25,7 @@ const statCards = [
   { label: 'Last Login', value: 'Today', detail: '02:45 PM', icon: Lock },
 ];
 
-const users = [
+const initialUsers = [
   { id: 'USR-001', name: 'Dr. Rajesh Sharma', email: 'rajesh@medicore.com', role: 'Admin', status: 'Active', department: 'Administration', lastLogin: 'Today 02:45 PM', memberSince: '01 Jan 2025' },
   { id: 'USR-002', name: 'Dr. Priya Nair', email: 'priya@medicore.com', role: 'Doctor', status: 'Active', department: 'Cardiology', lastLogin: 'Today 10:30 AM', memberSince: '15 Feb 2025' },
   { id: 'USR-003', name: 'Arjun Menon', email: 'arjun@medicore.com', role: 'Nurse', status: 'Active', department: 'ICU', lastLogin: 'Today 08:15 AM', memberSince: '20 Mar 2025' },
@@ -47,52 +49,70 @@ const permissions = [
   { id: 'PERM-006', name: 'Issue Prescriptions', category: 'Prescription', enabled: false },
 ];
 
+const emptyNewUser = { name: '', email: '', department: '', role: '', phone: '', license: '' };
+
+const newUserSchema = {
+  name: [rules.required('Full name is required')],
+  email: [rules.required('Email is required'), rules.email()],
+  department: [rules.required('Department is required')],
+  role: [rules.required('Role is required')],
+  phone: [rules.phone('Enter a valid contact number')],
+};
+
 export default function UserManagementPage() {
+  const toast = useToast();
+  const [usersList, setUsersList] = useState(initialUsers);
   const [rolesList, setRolesList] = useState(roles);
+
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUserForm, setNewUserForm] = useState(emptyNewUser);
+  const [newUserErrors, setNewUserErrors] = useState({});
+
   const [showCreateRoleModal, setShowCreateRoleModal] = useState(false);
   const [showEditRoleModal, setShowEditRoleModal] = useState(false);
   const [editingRole, setEditingRole] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [showUserSettings, setShowUserSettings] = useState(false);
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [editedUserForm, setEditedUserForm] = useState(null);
-  const [newRoleForm, setNewRoleForm] = useState({
-    name: '',
-    description: '',
-    permissions: [],
-  });
+  const [newRoleForm, setNewRoleForm] = useState({ name: '', description: '', permissions: [] });
 
   const handleOpenUserProfile = (user) => {
     setSelectedUser(user);
-    setEditedUserForm(user);
     setShowProfileModal(true);
-    setShowUserSettings(false);
-    setIsEditingProfile(false);
   };
 
-  const handleCloseProfileModal = () => {
-    setShowProfileModal(false);
-    setShowUserSettings(false);
-    setIsEditingProfile(false);
-    setSelectedUser(null);
-    setEditedUserForm(null);
+  const handleSaveProfile = (updated) => {
+    setUsersList((current) => current.map((u) => (u.id === updated.id ? updated : u)));
+    setSelectedUser(updated);
   };
 
-  const handleEditProfile = () => {
-    setIsEditingProfile(true);
-    setEditedUserForm({ ...selectedUser });
+  const handleOpenAddUser = () => {
+    setNewUserForm(emptyNewUser);
+    setNewUserErrors({});
+    setShowAddUserModal(true);
   };
 
-  const handleSaveProfile = () => {
-    setSelectedUser({ ...editedUserForm });
-    setIsEditingProfile(false);
-    alert(`Profile for ${editedUserForm.name} updated successfully!`);
-  };
+  const handleAddUser = (e) => {
+    e.preventDefault();
+    const errors = validateForm(newUserForm, newUserSchema);
+    setNewUserErrors(errors);
+    if (!isValid(errors)) {
+      toast.error('Please fix the highlighted fields');
+      return;
+    }
 
-  const handleCancelEdit = () => {
-    setIsEditingProfile(false);
-    setEditedUserForm({ ...selectedUser });
+    const newUser = {
+      id: `USR-${String(usersList.length + 1).padStart(3, '0')}`,
+      name: newUserForm.name,
+      email: newUserForm.email,
+      role: newUserForm.role,
+      status: 'Active',
+      department: newUserForm.department,
+      lastLogin: '—',
+      memberSince: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+    };
+    setUsersList((current) => [...current, newUser]);
+    setShowAddUserModal(false);
+    toast.success(`User "${newUser.name}" added successfully`);
   };
 
   const handleCreateRoleClick = () => {
@@ -100,47 +120,36 @@ export default function UserManagementPage() {
     setShowCreateRoleModal(true);
   };
 
-  const handleEditRoleClick = () => {
-    setShowEditRoleModal(true);
-  };
+  const handleEditRoleClick = () => setShowEditRoleModal(true);
 
   const handleCreateRole = () => {
     if (!newRoleForm.name.trim()) {
-      alert('Please enter a role name');
+      toast.error('Please enter a role name');
       return;
     }
-
     const newRole = {
       id: `ROLE-${String(rolesList.length + 1).padStart(2, '0')}`,
       name: newRoleForm.name,
       users: 0,
       permissions: newRoleForm.permissions.length.toString(),
     };
-
     setRolesList([...rolesList, newRole]);
     setShowCreateRoleModal(false);
     setNewRoleForm({ name: '', description: '', permissions: [] });
-    alert(`Role "${newRoleForm.name}" created successfully!`);
+    toast.success(`Role "${newRole.name}" created successfully`);
   };
 
-  const handleSelectRole = (role) => {
-    setEditingRole(role);
-  };
+  const handleSelectRole = (role) => setEditingRole(role);
 
   const handleSaveEditRole = () => {
     if (!editingRole.name.trim()) {
-      alert('Please enter a role name');
+      toast.error('Please enter a role name');
       return;
     }
-
-    const updatedRoles = rolesList.map((role) =>
-      role.id === editingRole.id ? editingRole : role
-    );
-
-    setRolesList(updatedRoles);
+    setRolesList(rolesList.map((role) => (role.id === editingRole.id ? editingRole : role)));
     setShowEditRoleModal(false);
     setEditingRole(null);
-    alert(`Role "${editingRole.name}" updated successfully!`);
+    toast.success(`Role "${editingRole.name}" updated successfully`);
   };
 
   return (
@@ -169,43 +178,10 @@ export default function UserManagementPage() {
         ))}
       </div>
 
-      <Card title="Add New User">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Input label="Full Name" placeholder="Enter full name" />
-          <Input label="Email Address" type="email" placeholder="user@medicore.com" />
-          <Input label="Department" placeholder="Select department" />
-          <Input label="Role" placeholder="Select role" />
-          <Input label="Contact Number" placeholder="+91 XXXXXXXXXX" />
-          <Input label="License Number" placeholder="If applicable" />
-          <div className="lg:col-span-2">
-            <label className="block text-sm font-medium text-ink-900 mb-1.5">Permissions</label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="w-4 h-4 rounded border-line" />
-                <span className="text-sm text-ink-700">View Patients</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="w-4 h-4 rounded border-line" />
-                <span className="text-sm text-ink-700">Add Patients</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="w-4 h-4 rounded border-line" />
-                <span className="text-sm text-ink-700">View Prescriptions</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="w-4 h-4 rounded border-line" />
-                <span className="text-sm text-ink-700">Issue Prescriptions</span>
-              </label>
-            </div>
-          </div>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Button icon={UserPlus}>Add User</Button>
-          <Button variant="secondary">Cancel</Button>
-        </div>
-      </Card>
-
-      <Card title="User List">
+      <Card
+        title="User List"
+        action={<Button icon={UserPlus} onClick={handleOpenAddUser}>Add User</Button>}
+      >
         <Table
           columns={[
             { key: 'id', header: 'User ID' },
@@ -217,18 +193,13 @@ export default function UserManagementPage() {
               key: 'action',
               header: 'Action',
               render: (row) => (
-                <button
-                  onClick={() => handleOpenUserProfile(row)}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 transition-all duration-150 animate-pulse"
-                >
-                  <Eye className="w-4 h-4" />
+                <Button size="sm" variant="secondary" icon={Eye} onClick={() => handleOpenUserProfile(row)}>
                   Profile
-                </button>
+                </Button>
               ),
             },
           ]}
-          data={users}
-          headerBgClass="bg-teal-700"
+          data={usersList}
         />
       </Card>
 
@@ -241,13 +212,75 @@ export default function UserManagementPage() {
             { key: 'permissions', header: 'Permissions' },
           ]}
           data={rolesList}
-          headerBgClass="bg-teal-700"
         />
         <div className="mt-4 flex gap-3">
           <Button icon={UserPlus} onClick={handleCreateRoleClick}>Create Role</Button>
           <Button variant="secondary" icon={Edit2} onClick={handleEditRoleClick}>Edit Roles</Button>
         </div>
       </Card>
+
+      {/* Add New User — opens in a popup, matching every other form in the app */}
+      <FormModal
+        isOpen={showAddUserModal}
+        onClose={() => setShowAddUserModal(false)}
+        onSubmit={handleAddUser}
+        title="Add New User"
+        submitLabel="Add User"
+      >
+        <Input
+          label="Full Name"
+          placeholder="Enter full name"
+          value={newUserForm.name}
+          onChange={(e) => setNewUserForm({ ...newUserForm, name: e.target.value })}
+          error={newUserErrors.name}
+        />
+        <Input
+          label="Email Address"
+          type="email"
+          placeholder="user@medicore.com"
+          value={newUserForm.email}
+          onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
+          error={newUserErrors.email}
+        />
+        <Input
+          label="Department"
+          placeholder="e.g. Cardiology"
+          value={newUserForm.department}
+          onChange={(e) => setNewUserForm({ ...newUserForm, department: e.target.value })}
+          error={newUserErrors.department}
+        />
+        <Input
+          label="Role"
+          placeholder="e.g. Doctor, Nurse"
+          value={newUserForm.role}
+          onChange={(e) => setNewUserForm({ ...newUserForm, role: e.target.value })}
+          error={newUserErrors.role}
+        />
+        <Input
+          label="Contact Number"
+          placeholder="+91 XXXXXXXXXX"
+          value={newUserForm.phone}
+          onChange={(e) => setNewUserForm({ ...newUserForm, phone: e.target.value })}
+          error={newUserErrors.phone}
+        />
+        <Input
+          label="License Number"
+          placeholder="If applicable"
+          value={newUserForm.license}
+          onChange={(e) => setNewUserForm({ ...newUserForm, license: e.target.value })}
+        />
+        <div className="lg:col-span-2">
+          <label className="block text-sm font-medium text-ink-900 mb-1.5">Permissions</label>
+          <div className="grid grid-cols-2 gap-3">
+            {['View Patients', 'Add Patients', 'View Prescriptions', 'Issue Prescriptions'].map((p) => (
+              <label key={p} className="flex items-center gap-2">
+                <input type="checkbox" className="w-4 h-4 rounded border-line" />
+                <span className="text-sm text-ink-700">{p}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      </FormModal>
 
       {/* Create Role Modal */}
       <Modal
@@ -261,28 +294,20 @@ export default function UserManagementPage() {
             label="Role Name"
             placeholder="e.g., Senior Doctor, Pharmacist"
             value={newRoleForm.name}
-            onChange={(e) =>
-              setNewRoleForm({ ...newRoleForm, name: e.target.value })
-            }
+            onChange={(e) => setNewRoleForm({ ...newRoleForm, name: e.target.value })}
           />
           <div>
-            <label className="block text-sm font-medium text-ink-900 mb-1.5">
-              Description
-            </label>
+            <label className="block text-sm font-medium text-ink-900 mb-1.5">Description</label>
             <textarea
               rows="3"
               className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               placeholder="Describe the role and its responsibilities"
               value={newRoleForm.description}
-              onChange={(e) =>
-                setNewRoleForm({ ...newRoleForm, description: e.target.value })
-              }
+              onChange={(e) => setNewRoleForm({ ...newRoleForm, description: e.target.value })}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink-900 mb-2">
-              Assign Permissions
-            </label>
+            <label className="block text-sm font-medium text-ink-900 mb-2">Assign Permissions</label>
             <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto">
               {permissions.map((perm) => (
                 <label key={perm.id} className="flex items-center gap-2">
@@ -291,16 +316,11 @@ export default function UserManagementPage() {
                     checked={newRoleForm.permissions.includes(perm.id)}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setNewRoleForm({
-                          ...newRoleForm,
-                          permissions: [...newRoleForm.permissions, perm.id],
-                        });
+                        setNewRoleForm({ ...newRoleForm, permissions: [...newRoleForm.permissions, perm.id] });
                       } else {
                         setNewRoleForm({
                           ...newRoleForm,
-                          permissions: newRoleForm.permissions.filter(
-                            (p) => p !== perm.id
-                          ),
+                          permissions: newRoleForm.permissions.filter((p) => p !== perm.id),
                         });
                       }
                     }}
@@ -313,35 +333,22 @@ export default function UserManagementPage() {
           </div>
         </div>
         <div className="flex gap-3 px-6 py-4 border-t border-line bg-surface rounded-b-xl">
-          <Button onClick={handleCreateRole} fullWidth>
-            Create Role
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => setShowCreateRoleModal(false)}
-            fullWidth
-          >
-            Cancel
-          </Button>
+          <Button onClick={handleCreateRole} fullWidth>Create Role</Button>
+          <Button variant="secondary" onClick={() => setShowCreateRoleModal(false)} fullWidth>Cancel</Button>
         </div>
       </Modal>
 
       {/* Edit Role Modal */}
       <Modal
         isOpen={showEditRoleModal}
-        onClose={() => {
-          setShowEditRoleModal(false);
-          setEditingRole(null);
-        }}
+        onClose={() => { setShowEditRoleModal(false); setEditingRole(null); }}
         title="Edit Role"
         size="lg"
       >
         <div className="px-6 py-4">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-ink-900 mb-2">
-                Select Role to Edit
-              </label>
+              <label className="block text-sm font-medium text-ink-900 mb-2">Select Role to Edit</label>
               <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
                 {rolesList.map((role) => (
                   <button
@@ -365,22 +372,14 @@ export default function UserManagementPage() {
                 <Input
                   label="Role Name"
                   value={editingRole.name}
-                  onChange={(e) =>
-                    setEditingRole({ ...editingRole, name: e.target.value })
-                  }
+                  onChange={(e) => setEditingRole({ ...editingRole, name: e.target.value })}
                 />
                 <div>
-                  <label className="block text-sm font-medium text-ink-900 mb-2">
-                    Permissions
-                  </label>
+                  <label className="block text-sm font-medium text-ink-900 mb-2">Permissions</label>
                   <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto">
                     {permissions.map((perm) => (
                       <label key={perm.id} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          defaultChecked={perm.enabled}
-                          className="w-4 h-4 rounded border-line"
-                        />
+                        <input type="checkbox" defaultChecked={perm.enabled} className="w-4 h-4 rounded border-line" />
                         <span className="text-sm text-ink-700">{perm.name}</span>
                       </label>
                     ))}
@@ -391,19 +390,10 @@ export default function UserManagementPage() {
           </div>
         </div>
         <div className="flex gap-3 px-6 py-4 border-t border-line bg-surface rounded-b-xl">
-          <Button
-            onClick={handleSaveEditRole}
-            disabled={!editingRole}
-            fullWidth
-          >
-            Save Changes
-          </Button>
+          <Button onClick={handleSaveEditRole} disabled={!editingRole} fullWidth>Save Changes</Button>
           <Button
             variant="secondary"
-            onClick={() => {
-              setShowEditRoleModal(false);
-              setEditingRole(null);
-            }}
+            onClick={() => { setShowEditRoleModal(false); setEditingRole(null); }}
             fullWidth
           >
             Cancel
@@ -411,185 +401,13 @@ export default function UserManagementPage() {
         </div>
       </Modal>
 
-      {/* User Profile Modal */}
-      <Modal
+      {/* User Profile Modal — shared, reusable component (also used for "My Profile" in the header) */}
+      <UserProfileModal
         isOpen={showProfileModal}
-        onClose={handleCloseProfileModal}
-        title="User Profile"
-        size="lg"
-      >
-        {!showUserSettings ? (
-          <>
-            <div className="px-6 py-4 space-y-4">
-              {!isEditingProfile ? (
-                selectedUser && (
-                  <>
-                    <div className="flex items-center gap-4">
-                      <div className="w-20 h-20 rounded-full bg-teal-100 flex items-center justify-center">
-                        <Users className="h-10 w-10 text-teal-600" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-lg text-ink-900">{selectedUser.name}</p>
-                        <p className="text-sm text-ink-600">{selectedUser.role}</p>
-                        <p className="text-xs text-ink-500 mt-1">{selectedUser.email}</p>
-                      </div>
-                    </div>
-                    <div className="border-t border-line pt-4 space-y-3">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs text-ink-600 uppercase font-semibold">Department</p>
-                          <p className="text-sm font-medium text-ink-900 mt-1">{selectedUser.department}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-ink-600 uppercase font-semibold">Status</p>
-                          <p className="text-sm font-medium text-ink-900 mt-1">
-                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                              selectedUser.status === 'Active' 
-                                ? 'bg-green-50 text-green-700' 
-                                : 'bg-red-50 text-red-700'
-                            }`}>
-                              {selectedUser.status}
-                            </span>
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-ink-600 uppercase font-semibold">Last Login</p>
-                          <p className="text-sm font-medium text-ink-900 mt-1">{selectedUser.lastLogin}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-ink-600 uppercase font-semibold">Member Since</p>
-                          <p className="text-sm font-medium text-ink-900 mt-1">{selectedUser.memberSince}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )
-              ) : (
-                editedUserForm && (
-                  <div className="space-y-4">
-                    <Input 
-                      label="Full Name" 
-                      value={editedUserForm.name}
-                      onChange={(e) => setEditedUserForm({ ...editedUserForm, name: e.target.value })}
-                    />
-                    <Input 
-                      label="Email" 
-                      type="email"
-                      value={editedUserForm.email}
-                      onChange={(e) => setEditedUserForm({ ...editedUserForm, email: e.target.value })}
-                    />
-                    <Input 
-                      label="Department" 
-                      value={editedUserForm.department}
-                      onChange={(e) => setEditedUserForm({ ...editedUserForm, department: e.target.value })}
-                    />
-                    <Input 
-                      label="Role" 
-                      value={editedUserForm.role}
-                      onChange={(e) => setEditedUserForm({ ...editedUserForm, role: e.target.value })}
-                    />
-                    <div>
-                      <label className="block text-sm font-medium text-ink-900 mb-1.5">Status</label>
-                      <select 
-                        value={editedUserForm.status}
-                        onChange={(e) => setEditedUserForm({ ...editedUserForm, status: e.target.value })}
-                        className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                      >
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                      </select>
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
-            <div className="flex gap-3 px-6 py-4 border-t border-line bg-surface rounded-b-xl">
-             {!isEditingProfile ? (
-  <>
-    <Button
-      onClick={handleEditProfile}
-      icon={Edit2}
-      fullWidth
-    >
-      Edit Profile
-    </Button>
-
-    <Button
-      onClick={() => setShowUserSettings(true)}
-      icon={Settings}
-      fullWidth
-    >
-      Settings
-    </Button>
-  </>
-) : (
-  <>
-    <Button
-      onClick={handleSaveProfile}
-      fullWidth
-    >
-      Save Changes
-    </Button>
-
-    <Button
-      variant="secondary"
-      onClick={handleCancelEdit}
-      fullWidth
-    >
-      Cancel
-    </Button>
-  </>
-)}
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="px-6 py-4 space-y-4">
-              <div>
-                <h4 className="font-semibold text-ink-900 mb-3">System Settings</h4>
-                <div className="space-y-3">
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" defaultChecked className="w-4 h-4 rounded border-line" />
-                    <span className="text-sm text-ink-700">Email notifications</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" defaultChecked className="w-4 h-4 rounded border-line" />
-                    <span className="text-sm text-ink-700">SMS alerts</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" className="w-4 h-4 rounded border-line" />
-                    <span className="text-sm text-ink-700">Two-factor authentication</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="border-t border-line pt-4">
-                <h4 className="font-semibold text-ink-900 mb-3">Privacy Settings</h4>
-                <div className="space-y-3">
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" defaultChecked className="w-4 h-4 rounded border-line" />
-                    <span className="text-sm text-ink-700">Show profile to other users</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" defaultChecked className="w-4 h-4 rounded border-line" />
-                    <span className="text-sm text-ink-700">Allow activity tracking</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-3 px-6 py-4 border-t border-line bg-surface rounded-b-xl">
-              <Button fullWidth>Save Settings</Button>
-              <Button
-                variant="secondary"
-                onClick={() => setShowUserSettings(false)}
-                fullWidth
-              >
-                Back
-              </Button>
-            </div>
-          </>
-        )}
-      </Modal>
+        onClose={() => setShowProfileModal(false)}
+        user={selectedUser}
+        onSave={handleSaveProfile}
+      />
     </div>
   );
 }

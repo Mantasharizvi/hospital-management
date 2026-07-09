@@ -1,10 +1,23 @@
 import { useState } from 'react';
-import { Menu, Search, Bell, ChevronDown, LogOut, User } from 'lucide-react';
+import { Menu, ChevronDown, LogOut, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import UserProfileModal from '../common/UserProfileModal';
 import GlobalSearch from './GlobalSearch';
+
 export default function Header({ onMenuClick }) {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const profileUser = {
+    name: user?.name ?? 'Admin User',
+    role: user?.role ?? 'Administrator',
+    email: user?.email ?? 'admin@medicore.com',
+    department: user?.department ?? 'Administration',
+    status: user?.status ?? 'Active',
+    lastLogin: user?.lastLogin ?? 'Just now',
+    memberSince: user?.memberSince ?? '—',
+  };
 
   return (
     <header className="sticky top-0 z-20 h-16 bg-white border-b border-line flex items-center gap-4 px-4 lg:px-6">
@@ -16,12 +29,11 @@ export default function Header({ onMenuClick }) {
         <Menu className="w-5.5 h-5.5" />
       </button>
 
-   <div className="relative hidden sm:block flex-1 max-w-sm">
-  <GlobalSearch onSelect={(item) => console.log('selected', item)} />
-</div>
+      <div className="relative hidden sm:block flex-1 max-w-sm">
+        <GlobalSearch onSelect={(item) => console.log('selected', item)} />
+      </div>
 
       <div className="ml-auto flex items-center gap-2">
-       
         <div className="relative">
           <button
             onClick={() => setMenuOpen((o) => !o)}
@@ -41,7 +53,13 @@ export default function Header({ onMenuClick }) {
             <>
               <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg border border-line shadow-lg z-20 py-1">
-                <button className="w-full flex items-center gap-2 px-3.5 py-2 text-sm text-ink-900 hover:bg-surface">
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setProfileOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2 px-3.5 py-2 text-sm text-ink-900 hover:bg-surface"
+                >
                   <User className="w-4 h-4" /> My Profile
                 </button>
                 <button
@@ -55,6 +73,13 @@ export default function Header({ onMenuClick }) {
           )}
         </div>
       </div>
+
+      <UserProfileModal
+        isOpen={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        user={profileUser}
+        onSave={(updated) => updateUser(updated)}
+      />
     </header>
   );
 }

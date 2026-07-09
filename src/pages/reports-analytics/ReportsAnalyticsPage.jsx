@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Activity, BedDouble, Pill, IndianRupee, TrendingUp, PieChart } from 'lucide-react';
+import { Activity, BedDouble, Pill, IndianRupee, TrendingUp, PieChart, Download, Printer } from 'lucide-react';
 import Card from '../../components/common/Card';
 import Table from '../../components/common/Table';
+import Button from '../../components/common/Button';
 import StatCard from '../../components/dashboard/StatCard';
 import RevenueTrendChart from '../../components/reports/RevenueTrendChart';
 import ServiceDistributionChart from '../../components/reports/ServiceDistributionChart';
-import ReportsFilterBar from '../../components/reports/ReportsFilterBar';
 import ExportReportModal from '../../components/reports/ExportReportModal';
 import {
   reportStatCards,
@@ -25,7 +25,6 @@ const INR = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR',
 
 export default function ReportsAnalyticsPage() {
   const [activeTab, setActiveTab] = useState('opd');
-  const [range, setRange] = useState('Last 7 days');
   const [showExportModal, setShowExportModal] = useState(false);
 
   const columns = reportColumns[activeTab];
@@ -56,14 +55,6 @@ export default function ReportsAnalyticsPage() {
         </div>
       </div>
 
-      {/* Filter bar: date range + export/print, applies to whichever tab is active */}
-      <ReportsFilterBar
-        range={range}
-        onRangeChange={setRange}
-        onExport={() => setShowExportModal(true)}
-        onPrint={handlePrint}
-      />
-
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {reportStatCards.map((card) => (
@@ -93,7 +84,15 @@ export default function ReportsAnalyticsPage() {
       </Card>
 
       {/* Reports Tabs */}
-      <Card title="Reports">
+      <Card
+        title="Reports"
+        action={
+          <div className="flex gap-2">
+            <Button size="sm" variant="secondary" icon={Printer} onClick={handlePrint}>Print</Button>
+            <Button size="sm" icon={Download} onClick={() => setShowExportModal(true)}>Export Report</Button>
+          </div>
+        }
+      >
         <div className="mb-4 flex flex-wrap gap-2 border-b border-line pb-4">
           {tabs.map((tab) => (
             <button
@@ -111,7 +110,7 @@ export default function ReportsAnalyticsPage() {
           ))}
         </div>
 
-        <Table columns={tableColumns} data={rows} headerBgClass="bg-teal-700" />
+        <Table columns={tableColumns} data={rows} />
       </Card>
 
       {/* Export PDF/Excel/CSV — generates and downloads a real file */}
