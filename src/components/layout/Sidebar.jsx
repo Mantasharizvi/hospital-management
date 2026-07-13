@@ -1,20 +1,85 @@
-import { NavLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, ClipboardList, BedDouble,
-  Pill, Settings, X, Activity, BarChart3,
+  Pill, Settings, X, Activity, BarChart3, ChevronDown,
 } from 'lucide-react';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/opd', label: 'OPD', icon: ClipboardList },
-  { to: '/ipd', label: 'IPD', icon: BedDouble },
-  { to: '/pharmacy', label: 'Pharmacy', icon: Pill },
-  { to: '/reports', label: 'Reports & Analytics', icon: BarChart3 },
-  { to: '/users', label: 'User Management', icon: Users },
+  {
+    label: 'OPD', icon: ClipboardList, base: '/opd',
+    children: [
+      { to: '/opd/patients', label: 'Patient Registration' },
+      { to: '/opd/appointments', label: 'Appointment Management' },
+      { to: '/opd/consultation', label: 'Doctor Consultation' },
+      { to: '/opd/prescriptions', label: 'Prescription Page' },
+      { to: '/opd/billing', label: 'Billing and Invoice' },
+      { to: '/opd/history', label: 'Patient History Section' },
+    ],
+  },
+  {
+    label: 'IPD', icon: BedDouble, base: '/ipd',
+    children: [
+      { to: '/ipd/admission', label: 'Admission Form' },
+      { to: '/ipd/wards', label: 'Ward Management' },
+      { to: '/ipd/beds', label: 'Bed Allocation' },
+      { to: '/ipd/treatments', label: 'Treatment Records' },
+      { to: '/ipd/discharge', label: 'Discharge Summary' },
+      { to: '/ipd/billing', label: 'IPD Billing' },
+    ],
+  },
+  {
+    label: 'Pharmacy', icon: Pill, base: '/pharmacy',
+    children: [
+      { to: '/pharmacy/inventory', label: 'Medicine Inventory' },
+      { to: '/pharmacy/purchase', label: 'Purchase Entry' },
+      { to: '/pharmacy/sales', label: 'Sales Billing' },
+      { to: '/pharmacy/stock', label: 'Stock Management' },
+      { to: '/pharmacy/expiry', label: 'Expiry Alerts' },
+      { to: '/pharmacy/reports', label: 'Pharmacy Reports' },
+    ],
+  },
+  {
+    label: 'User Management', icon: Users, base: '/users',
+    children: [
+      { to: '/users/list', label: 'User List (Add User)' },
+      { to: '/users/roles', label: 'Role Management' },
+      { to: '/users/permissions', label: 'Permissions Management' },
+      { to: '/users/profile', label: 'Profile Page' },
+    ],
+  },
+  {
+    label: 'Reports & Analytics', icon: BarChart3, base: '/reports',
+    children: [
+      { to: '/reports/dashboard', label: 'Analytics Dashboard' },
+      { to: '/reports/opd', label: 'OPD Reports' },
+      { to: '/reports/ipd', label: 'IPD Reports' },
+      { to: '/reports/pharmacy', label: 'Pharmacy Reports' },
+      { to: '/reports/revenue', label: 'Revenue Reports' },
+    ],
+  },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
+  const location = useLocation();
+  const [openModule, setOpenModule] = useState(() => {
+    const active = navItems.find((item) => item.base && location.pathname.startsWith(item.base));
+    return active?.label ?? null;
+  });
+
+  // Keep the dropdown open when navigating directly (e.g. refresh, back button)
+  // to a child route of a different module.
+  useEffect(() => {
+    const active = navItems.find((item) => item.base && location.pathname.startsWith(item.base));
+    if (active) setOpenModule(active.label);
+  }, [location.pathname]);
+
+  const toggleModule = (label) => {
+    setOpenModule((current) => (current === label ? null : label));
+  };
+
   return (
     <>
       {/* mobile overlay */}
@@ -47,27 +112,73 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {navItems.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              onClick={onClose}
-              className={({ isActive }) => `
-                flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                transition-colors duration-150
-                ${isActive ? 'bg-teal-600 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'}
-              `}
-            >
-              <Icon className="w-4.5 h-4.5 shrink-0" />
-              {label}
-            </NavLink>
-          ))}
+          {navItems.map((item) => {
+            const Icon = item.icon;
+
+            // Flat link (Dashboard, Settings)
+            if (!item.children) {
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  onClick={onClose}
+                  className={({ isActive }) => `
+                    flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                    transition-colors duration-150
+                    ${isActive ? 'bg-teal-600 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'}
+                  `}
+                >
+                  <Icon className="w-4.5 h-4.5 shrink-0" />
+                  {item.label}
+                </NavLink>
+              );
+            }
+
+            // Dropdown module (OPD, IPD, Pharmacy, User Management, Reports & Analytics)
+            const isModuleActive = location.pathname.startsWith(item.base);
+            const isOpenModule = openModule === item.label;
+
+            return (
+              <div key={item.label}>
+                <button
+                  type="button"
+                  onClick={() => toggleModule(item.label)}
+                  aria-expanded={isOpenModule}
+                  className={`
+                    w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                    transition-colors duration-150
+                    ${isModuleActive ? 'text-white bg-white/5' : 'text-white/70 hover:bg-white/5 hover:text-white'}
+                  `}
+                >
+                  <Icon className="w-4.5 h-4.5 shrink-0" />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  <ChevronDown className={`w-4 h-4 shrink-0 transition-transform duration-150 ${isOpenModule ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isOpenModule && (
+                  <div className="mt-1 ml-4 pl-3 border-l border-white/10 space-y-1">
+                    {item.children.map((child) => (
+                      <NavLink
+                        key={child.to}
+                        to={child.to}
+                        onClick={onClose}
+                        className={({ isActive }) => `
+                          block px-3 py-2 rounded-lg text-sm
+                          transition-colors duration-150
+                          ${isActive ? 'bg-teal-600 text-white font-medium' : 'text-white/60 hover:bg-white/5 hover:text-white'}
+                        `}
+                      >
+                        {child.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </nav>
 
-        <div className="px-4 py-4 border-t border-white/10 text-xs text-white/40">
-          v1.0.0 — UI build
-        </div>
       </aside>
     </>
   );
